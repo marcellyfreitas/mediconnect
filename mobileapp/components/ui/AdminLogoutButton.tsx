@@ -1,4 +1,4 @@
-import { useAdminAuth } from '@/contexts/AdminAuthenticationContext';
+import { useAdminAuth } from '@/hooks/useAdminAuth';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { Text } from 'react-native';
 import Button from './Button';
@@ -9,12 +9,12 @@ const AdminLogoutButton = () => {
 
 	async function onPressLogout() {
 		await logout();
-		router.replace('/(auth)/adminlogin');
+		router.replace('/auth/adminlogin');
 	}
 	return (
 		<Button color="primary" className="flex flex-row w-full gap-2" onPress={onPressLogout}>
-			<Ionicons name="log-out-outline" className="text-white" size={16} />
-			<Text className="text-white">Logout</Text>
+			<Ionicons name="log-out-outline" className="text-secondary-500" size={16} />
+			<Text className="font-bold text-secondary-500">Logout</Text>
 		</Button>
 	);
 };

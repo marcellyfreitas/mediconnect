@@ -21,7 +21,10 @@ public class DoctorRepository : IRepository<Doctor>
     public async Task<IEnumerable<Doctor>> GetAllAsync()
     {
         return await _context.Doctors
-            .Include(u => u.Especialization)
+            .Include(u => u.Specialization)
+            .Include(d => d.DoctorMedicalCenters!)
+            .ThenInclude(dmc => dmc.MedicalCenter)
+            .AsNoTracking()
             .OrderByDescending(a => a.Id)
             .ToListAsync();
     }
@@ -29,7 +32,7 @@ public class DoctorRepository : IRepository<Doctor>
     public async Task<Doctor?> GetByIdAsync(int id)
     {
         return await _context.Doctors
-            .Include(u => u.Especialization)
+            .Include(u => u.Specialization)
             .FirstOrDefaultAsync(x => x.Id == id);
     }
 

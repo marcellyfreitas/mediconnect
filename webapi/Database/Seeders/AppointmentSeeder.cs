@@ -1,89 +1,63 @@
 using WebApi.Models;
-using WebApi.Database;
+using WebApi.Helpers;
+using Bogus;
+using System.Linq;
 
 namespace WebApi.Database.Seeders;
 
-public class AppointmentSeeder
+public class AppointmentSeeder : ISeeder
 {
     private readonly ApplicationDbContext _context;
+    private readonly Faker _faker;
 
     public AppointmentSeeder(ApplicationDbContext context)
     {
         _context = context;
+        _faker = new Faker("pt_BR");
     }
 
-    public void Seed()
+    public async Task Seed()
     {
         if (!_context.Appointments.Any())
         {
-            var appointments = new List<Appointment>
+            if (!_context.Users.Any() || !_context.Doctors.Any() || !_context.MedicalCenters.Any())
             {
-                new Appointment {
-                    Date = DateTime.Parse("2025-03-02T19:00"),
-                    Notes = "Adicionado no seeder",
-                    UserId = 1,
-                    DoctorId = 1,
-                },
-                new Appointment {
-                    Date = DateTime.Parse("2025-03-03T19:00"),
-                    Notes = "Adicionado no seeder",
-                    UserId = 1,
-                    DoctorId = 1,
-                },
-                new Appointment {
-                    Date = DateTime.Parse("2025-03-04T19:00"),
-                    Notes = "Adicionado no seeder",
-                    UserId = 1,
-                    DoctorId = 1,
-                },
-                new Appointment {
-                    Date = DateTime.Parse("2025-03-05T19:00"),
-                    Notes = "Adicionado no seeder",
-                    UserId = 1,
-                    DoctorId = 1,
-                },
-                new Appointment {
-                    Date = DateTime.Parse("2025-03-06T19:00"),
-                    Notes = "Adicionado no seeder",
-                    UserId = 1,
-                    DoctorId = 1,
-                },
-                new Appointment {
-                    Date = DateTime.Parse("2025-03-07T19:00"),
-                    Notes = "Adicionado no seeder",
-                    UserId = 1,
-                    DoctorId = 1,
-                },
-                new Appointment {
-                    Date = DateTime.Parse("2025-03-08T19:00"),
-                    Notes = "Adicionado no seeder",
-                    UserId = 1,
-                    DoctorId = 1,
-                },
-                new Appointment {
-                    Date = DateTime.Parse("2025-03-09T19:00"),
-                    Notes = "Adicionado no seeder",
-                    UserId = 1,
-                    DoctorId = 1,
-                },
-                new Appointment {
-                    Date = DateTime.Parse("2025-03-10T19:00"),
-                    Notes = "Adicionado no seeder",
-                    UserId = 1,
-                    DoctorId = 1,
-                },
-                new Appointment {
-                    Date = DateTime.Parse("2025-03-11T19:00"),
-                    Notes = "Adicionado no seeder",
-                    UserId = 1,
-                    DoctorId = 1,
-                }
-            };
+                Console.WriteLine("Não é possível criar consultas - necessários usuários, médicos e unidades médicas");
+                return;
+            }
 
+            var userIds = _context.Users.Select(u => u.Id).ToList();
+            var doctorIds = _context.Doctors.Select(d => d.Id).ToList();
+            var medicalCenterIds = _context.MedicalCenters.Select(m => m.Id).ToList();
 
+            var appointmentFaker = new Faker<Appointment>()
+                .RuleFor(a => a.Date, f => f.Date.Between(DateTime.Now.AddDays(-30), DateTime.Now.AddMonths(3)))
+                .RuleFor(a => a.Protocol, _ => ProtocolHelper.GenerateProtocol())
+                .RuleFor(a => a.Notes, f => f.PickRandom(new[] {
+                    "Consulta de rotina",
+                    "Retorno médico",
+                    "Exame periódico",
+                    "Acompanhamento tratamento",
+                    "Check-up anual",
+                    null
+                }))
+                .RuleFor(a => a.UserId, f => f.PickRandom(userIds))
+                .RuleFor(a => a.DoctorId, f => f.PickRandom(doctorIds))
+                .RuleFor(a => a.MedicalCenterId, f => f.PickRandom(medicalCenterIds))
+                .RuleFor(a => a.Status, f => f.PickRandom(new[] { "Agendado", "Concluído", "Cancelado" })); // Use strings ou enum se tiver
 
-            _context.Appointments.AddRange(appointments);
-            _context.SaveChanges();
+            var appointments = appointmentFaker.Generate(50);
+
+            try
+            {
+                await _context.Appointments.AddRangeAsync(appointments);
+                await _context.SaveChangesAsync();
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine($"Erro ao criar consultas: {e.Message}");
+                throw;
+            }
         }
     }
 }

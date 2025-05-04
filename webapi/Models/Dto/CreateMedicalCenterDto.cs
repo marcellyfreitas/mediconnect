@@ -9,7 +9,6 @@ public class CreateMedicalCenterDto
     public string Name { get; set; } = "";
 
     [Required(ErrorMessage = "Campo {0} obrigatório.")]
-    [RegularExpression(@"^\+?(\d[\d-. ]+)?(\([\d-. ]+\))?[\d-. ]+\d$", ErrorMessage = "O campo {0} deve ser um número de telefone válido.")]
     public string PhoneNumber { get; set; } = "";
 
     [EmailAddress(ErrorMessage = "O campo {0} deve ser um endereço de email válido.")]
@@ -19,7 +18,6 @@ public class CreateMedicalCenterDto
     [StringLength(255, ErrorMessage = "O campo 'Logradouro' deve ter no máximo 255 caracteres.")]
     public string Logradouro { get; set; } = "";
 
-    [RegularExpression(@"^\d{5}-\d{3}$", ErrorMessage = "O campo 'Cep' deve estar no formato 00000-000.")]
     public string Cep { get; set; } = "";
 
     [StringLength(255, ErrorMessage = "O campo {0} deve ter no máximo {1} caracteres.")]

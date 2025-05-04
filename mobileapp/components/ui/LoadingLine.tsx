@@ -1,5 +1,6 @@
 import React, { useRef, useEffect } from 'react';
 import { View, StyleSheet, Animated } from 'react-native';
+import { colors } from '@/utils/constants';
 
 const LoadingLine = () => {
 	const progressAnim = useRef(new Animated.Value(0)).current;
@@ -59,7 +60,7 @@ const styles = StyleSheet.create({
 	},
 	progress: {
 		height: '100%',
-		backgroundColor: '#6200ee',
+		backgroundColor: colors.green,
 		borderRadius: 2,
 	},
 });

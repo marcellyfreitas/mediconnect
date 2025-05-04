@@ -1,34 +1,45 @@
 using WebApi.Database.Seeders;
 using WebApi.Database;
+using Microsoft.Extensions.Logging;
 
 namespace WebApi.Extensions;
 
-static class DatabaseSeederExtension
+public static class DatabaseSeederExtension
 {
-    public static void SeedDatabase(this IHost app)
+    public static async Task SeedDatabase(this IHost app)
     {
-        using (var scope = app.Services.CreateScope())
+        using var scope = app.Services.CreateScope();
+        var services = scope.ServiceProvider;
+
+        var logger = services.GetRequiredService<ILogger<IHost>>();
+        var context = services.GetRequiredService<ApplicationDbContext>();
+
+        var seeders = new List<ISeeder>
         {
-            var services = scope.ServiceProvider;
-            var context = services.GetRequiredService<ApplicationDbContext>();
+            new AddressSeeder(context),
+            new UserSeeder(context),
+            new AdministratorSeeder(context),
+            new SpecializationSeeder(context),
+            new DoctorSeeder(context),
+            new MedicalCenterSeeder(context),
+            new MedicalExamSeeder(context),
+            new DoctorMedicalCenterSeeder(context),
+            new AppointmentSeeder(context),
+        };
 
-            var userSeeder = new UserSeeder(context);
-            var administratorSeeder = new AdministratorSeeder(context);
-            var especializationSeeder = new EspecializationSeeder(context);
-            var doctorSeeder = new DoctorSeeder(context);
-            var addressSeeder = new AddressSeeder(context);
-            var medicalCenterSeeder = new MedicalCenterSeeder(context);
-            var appointmentSeeder = new AppointmentSeeder(context);
-            var medicalExamSeeder = new MedicalExamSeeder(context);
-
-            addressSeeder.Seed();
-            userSeeder.Seed();
-            administratorSeeder.Seed();
-            especializationSeeder.Seed();
-            doctorSeeder.Seed();
-            medicalCenterSeeder.Seed();
-            appointmentSeeder.Seed();
-            medicalExamSeeder.Seed();
+        foreach (var seeder in seeders)
+        {
+            try
+            {
+                logger.LogInformation("Iniciando seed de {SeederName}", seeder.GetType().Name);
+                await seeder.Seed();
+                logger.LogInformation("Seed de {SeederName} concluído com sucesso", seeder.GetType().Name);
+            }
+            catch (Exception ex)
+            {
+                logger.LogError(ex, "❌ Falha ao executar seed de {SeederName}", seeder.GetType().Name);
+                throw;
+            }
         }
     }
 }

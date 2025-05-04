@@ -23,5 +23,5 @@ public class CreateDoctorDto
 
     [Required(ErrorMessage = "Campo {0} obrigatório.")]
     [Range(1, int.MaxValue, ErrorMessage = "O campo {0} deve ser um valor positivo.")]
-    public int EspecializationId { get; set; }
+    public int SpecializationId { get; set; }
 }

@@ -20,6 +20,8 @@ public class MedicalCenter
 
     public Address? Address { get; set; }
 
+    public List<DoctorMedicalCenter>? DoctorMedicalCenters { get; set; }
+
     public DateTime? CreatedAt { get; set; } = DateTime.UtcNow;
 
     public DateTime? UpdatedAt { get; set; } = DateTime.UtcNow;

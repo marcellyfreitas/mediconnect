@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace WebApi.Repositories;
 
-public class MedicalCenterRepository : IRepository<MedicalCenter>
+public class MedicalCenterRepository : IUserRepository<MedicalCenter>
 {
     private readonly ApplicationDbContext _context;
 
@@ -22,6 +22,8 @@ public class MedicalCenterRepository : IRepository<MedicalCenter>
     {
         return await _context.MedicalCenters
             .OrderByDescending(a => a.Id)
+            .Include(u => u.DoctorMedicalCenters!)
+            .ThenInclude(dmc => dmc.Doctor)
             .Include(r => r.Address)
             .ToListAsync();
     }
@@ -29,6 +31,8 @@ public class MedicalCenterRepository : IRepository<MedicalCenter>
     public async Task<MedicalCenter?> GetByIdAsync(int id)
     {
         return await _context.MedicalCenters
+            .Include(u => u.DoctorMedicalCenters!)
+            .ThenInclude(dmc => dmc.Doctor)
             .Include(r => r.Address)
             .FirstOrDefaultAsync(x => x.Id == id);
     }
@@ -76,5 +80,11 @@ public class MedicalCenterRepository : IRepository<MedicalCenter>
             _logger.LogError(ex, ex.Message);
             throw;
         }
+    }
+
+    public async Task<MedicalCenter?> GetByEmailAsync(string email, int? id = null)
+    {
+        return await _context.MedicalCenters
+             .FirstOrDefaultAsync(x => x.Email == email && (!id.HasValue || x.Id != id.Value));
     }
 }

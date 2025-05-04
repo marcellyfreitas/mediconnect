@@ -9,12 +9,12 @@ static class RepositoryExtension
     {
         services.AddTransient<IAuthenticationRepository<Administrator>, AdminAuthRepository>();
         services.AddTransient<IAuthenticationRepository<User>, UserAuthRepository>();
-        services.AddTransient<IRepository<User>, UserRepository>();
+        services.AddTransient<IUserRepository<User>, UserRepository>();
         services.AddTransient<IRepository<Address>, AddressRepository>();
-        services.AddTransient<IRepository<Administrator>, AdministratorRepository>();
+        services.AddTransient<IUserRepository<Administrator>, AdministratorRepository>();
         services.AddTransient<IRepository<Doctor>, DoctorRepository>();
-        services.AddTransient<IRepository<Especialization>, EspecializationRepository>();
-        services.AddTransient<IRepository<MedicalCenter>, MedicalCenterRepository>();
+        services.AddTransient<IRepository<Specialization>, SpecializationRepository>();
+        services.AddTransient<IUserRepository<MedicalCenter>, MedicalCenterRepository>();
         services.AddTransient<IRepository<Appointment>, AppointmentRepository>();
         services.AddTransient<IRepository<AppointmentRating>, AppointmentRatingRepository>();
         services.AddTransient<IRepository<HealthPlan>, HealthPlanRepository>();

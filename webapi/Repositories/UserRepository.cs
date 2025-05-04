@@ -1,12 +1,11 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using WebApi.Database;
 using WebApi.Models;
-using System.Collections.Generic;
-using System.Threading.Tasks;
+using WebApi.Helpers;
 
 namespace WebApi.Repositories;
 
-public class UserRepository : IRepository<User>
+public class UserRepository : IUserRepository<User>
 {
     private readonly ApplicationDbContext _context;
 
@@ -30,17 +29,17 @@ public class UserRepository : IRepository<User>
         return await _context.Users.FirstOrDefaultAsync(x => x.Id == id);
     }
 
-    public async Task<User?> AddAsync(User User)
+    public async Task<User?> AddAsync(User user)
     {
         try
         {
-            _context.Users.Add(User);
-
+            user.Password = PasswordHelper.HashPassword(user.Password);
+            await _context.Users.AddAsync(user);
             await _context.SaveChangesAsync();
 
-            return User;
+            return user;
         }
-        catch (System.Exception ex)
+        catch (Exception ex)
         {
             _logger.LogError(ex, "Falha ao adicionar item");
             throw;
@@ -55,7 +54,7 @@ public class UserRepository : IRepository<User>
             _context.Entry(user).State = EntityState.Modified;
             await _context.SaveChangesAsync();
         }
-        catch (System.Exception ex)
+        catch (Exception ex)
         {
             _logger.LogError(ex, "Falha ao artualizar item");
             throw;
@@ -69,11 +68,16 @@ public class UserRepository : IRepository<User>
             _context.Users.Remove(user);
             await _context.SaveChangesAsync();
         }
-        catch (System.Exception ex)
+        catch (Exception ex)
         {
             _logger.LogError(ex, ex.Message);
             throw;
         }
+    }
 
+    public async Task<User?> GetByEmailAsync(string email, int? id = null)
+    {
+        return await _context.Users
+            .FirstOrDefaultAsync(x => x.Email == email && (!id.HasValue || x.Id != id.Value));
     }
 }

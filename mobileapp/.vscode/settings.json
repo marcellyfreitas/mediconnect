@@ -12,9 +12,6 @@
     "source.fixAll.eslint": "always"
   },
   "files.eol": "\n",
-  "files.exclude": {
-    "**/node_modules": true
-  },
   "typescript.preferences.importModuleSpecifier": "relative",
   "javascript.preferences.importModuleSpecifier": "relative",
   "emmet.includeLanguages": {

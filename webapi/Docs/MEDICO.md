@@ -20,7 +20,7 @@ Retorna a lista de entidades cadastradas na aplicação.
     "cpf": "string",
     "email": "string",
     "crm": "string",
-    "especialization": {...},
+    "Specialization": {...},
     "createdAt": "2025-03-03T17:50:12.726Z",
     "updatedAt": "2025-03-03T17:50:12.726Z"
   },
@@ -71,7 +71,7 @@ Obtém os detalhes de uma entidade específica pelo seu ID.
   "cpf": "string",
   "email": "string",
   "crm": "string",
-  "especialization": {...},
+  "Specialization": {...},
   "createdAt": "2025-03-03T17:50:12.726Z",
   "updatedAt": "2025-03-03T17:50:12.726Z"
 }

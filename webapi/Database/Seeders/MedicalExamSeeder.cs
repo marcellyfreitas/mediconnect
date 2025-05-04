@@ -3,7 +3,7 @@ using WebApi.Database;
 
 namespace WebApi.Database.Seeders;
 
-public class MedicalExamSeeder
+public class MedicalExamSeeder : ISeeder
 {
     private readonly ApplicationDbContext _context;
 
@@ -12,7 +12,7 @@ public class MedicalExamSeeder
         _context = context;
     }
 
-    public void Seed()
+    public async Task Seed()
     {
         if (!_context.MedicalExams.Any())
         {
@@ -61,8 +61,8 @@ public class MedicalExamSeeder
             };
 
 
-            _context.MedicalExams.AddRange(MedicalExams);
-            _context.SaveChanges();
+            await _context.MedicalExams.AddRangeAsync(MedicalExams);
+            await _context.SaveChangesAsync();
         }
     }
 }

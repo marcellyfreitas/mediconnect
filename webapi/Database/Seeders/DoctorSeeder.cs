@@ -1,9 +1,14 @@
 using WebApi.Models;
 using WebApi.Database;
+using Bogus;
+using Bogus.DataSets;
+using WebApi.Helpers;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 
 namespace WebApi.Database.Seeders;
 
-public class DoctorSeeder
+public class DoctorSeeder : ISeeder
 {
     private readonly ApplicationDbContext _context;
 
@@ -12,30 +17,40 @@ public class DoctorSeeder
         _context = context;
     }
 
-    public void Seed()
+    public async Task Seed()
     {
-        if (!_context.Doctors.Any())
+        if (!await _context.Doctors.AnyAsync())
         {
-            var Doctors = new List<Doctor>
-            {
-                new Doctor {
-                    Name = "Antonio Carlos",
-                    CPF = "582.423.471-07",
-                    Email = "antoniocarlos@example.com",
-                    CRM = "123844ZB",
-                    EspecializationId = 1,
-                },
-                new Doctor {
-                    Name = "Felipe Camargo",
-                    CPF = "020.194.711-08",
-                    Email = "felipecamargo@example.com",
-                    CRM = "144844ZB",
-                    EspecializationId = 1
-                },
-            };
+            var specializations = await _context.Specializations
+                .Select(s => s.Id)
+                .ToListAsync();
 
-            _context.Doctors.AddRange(Doctors);
-            _context.SaveChanges();
+            if (!specializations.Any())
+            {
+                throw new Exception("Nenhuma especialização encontrada.");
+            }
+
+            Random r = new Random();
+            var usedEmails = new HashSet<string>();
+            var doctorFaker = new Faker<Doctor>("pt_BR")
+                .RuleFor(d => d.Name, f => f.Name.FullName())
+                .RuleFor(d => d.CPF, _ => CpfHelper.Generate())
+                .RuleFor(d => d.Email, (f, d) =>
+                {
+                    string email;
+                    do
+                    {
+                        email = f.Internet.Email(d.Name.ToLower());
+                    } while (!usedEmails.Add(email));
+                    return email;
+                })
+                .RuleFor(d => d.CRM, f => $"{f.Random.Number(100000, 999999)}/{f.Address.StateAbbr()}")
+                .RuleFor(d => d.SpecializationId, f => r.Next(1, 12));
+
+            var doctors = doctorFaker.Generate(100);
+
+            await _context.Doctors.AddRangeAsync(doctors);
+            await _context.SaveChangesAsync();
         }
     }
 }

@@ -1,278 +1,90 @@
+# Documentação para Projeto .NET 8
 
-# Documentação da API
+## 1. Instalação do SDK .NET 8
 
-### Autenticação Usuário
+### Windows
+1. Acesse o site oficial do .NET: [https://dotnet.microsoft.com/en-us/download](https://dotnet.microsoft.com/en-us/download)
+2. Baixe e instale o SDK do .NET 8 para Windows.
+3. Verifique a instalação executando no terminal:
+   ```sh
+   dotnet --version
+   ```
 
-**POST /api/v1/auth/user/login**
-- **Payload:**
-  ```json
-  {
-    "email": "string",
-    "password": "string"
-  }
-  ```
-- **Resposta:**
-  ```json
-  {
-    "token": "string",
-    "refreshToken": "string"
-  }
-  ```
+### Linux (Ubuntu/Debian)
+```sh
+wget https://dot.net/v1/dotnet-install.sh -O dotnet-install.sh
+chmod +x dotnet-install.sh
+./dotnet-install.sh --channel 8.0
+export PATH=$HOME/.dotnet:$PATH
+```
+Verifique a instalação:
+```sh
+dotnet --version
+```
 
-**POST /api/v1/auth/user/refresh-token**
-- **Payload:**
-  ```json
-  {
-    "refreshToken": "string"
-  }
-  ```
-- **Resposta:**
-  ```json
-  {
-    "token": "string",
-    "refreshToken": "string"
-  }
-  ```
+### macOS
+```sh
+brew install dotnet-sdk@8
+```
+Verifique a instalação:
+```sh
+dotnet --version
+```
 
-**POST /api/v1/auth/user/logout**
-- **Resposta:**
-  ```json
-  {
-    "message": "Success"
-  }
-  ```
+## 2. Criando um novo projeto
+Para criar um novo projeto ASP.NET Core Web API:
+```sh
+dotnet new webapi -n webapi
+cd webapi
+```
 
-**GET /api/v1/auth/user/usuario**
-- **Resposta:**
-  ```json
-  {
-    "id": 0,
-    "name": "string",
-    "email": "string",
-    "cpf": "string",
-    "address": {
-      "id": 0,
-      "logradouro": "string",
-      "cep": "string",
-      "bairro": "string",
-      "cidade": "string",
-      "estado": "string",
-      "pais": "string",
-      "numero": "string",
-      "complemento": "string",
-      "createdAt": "string",
-      "updatedAt": "string"
-    },
-    "createdAt": "string",
-    "updatedAt": "string"
-  }
-  ```
+### Estrutura do Projeto
+```
+.
+├── Controllers/*
+├── Database/*
+├── Extensions/*
+├── Helpers/*
+├── Models/*
+├── Repositories/*
+├── appsettings.Development.json
+├── appsettings.json
+├── application.db
+├── Program.cs
+├── README.md
+├── webapi.csproj
+└── webapi.sln
+```
 
-**POST /api/v1/auth/user/register**
-- **Payload:**
-  ```json
-  {
-    "name": "string",
-    "email": "string",
-    "password": "string",
-    "cpf": "string",
-    "addressId": 0
-  }
-  ```
-- **Resposta:**
-  ```json
-  {
-    "id": 0,
-    "name": "string",
-    "email": "string",
-    "cpf": "string",
-    "addressId": 0,
-    "createdAt": "string",
-    "updatedAt": "string"
-  }
-  ```
+## 3. Executando o Servidor
+### Com `dotnet run`
+```sh
+dotnet run
+```
+A aplicação será iniciada e você verá uma saída como:
+```
+Now listening on: http://localhost:5000
+Now listening on: https://localhost:5001
+```
 
-### Autenticação Administrador
+### Com `dotnet watch`
+Para recarregar automaticamente ao detectar alterações:
+```sh
+dotnet watch run
+```
 
-**POST /api/v1/auth/admin/login**
-- **Payload:**
-  ```json
-  {
-    "email": "string",
-    "password": "string"
-  }
-  ```
-- **Resposta:**
-  ```json
-  {
-    "token": "string",
-    "refreshToken": "string"
-  }
-  ```
+## 4. Testando a API
+Para testar a API, use o **cURL** ou o **Postman**:
+```sh
+curl -X GET https://localhost:5000/api/v1/
+```
 
-**POST /api/v1/auth/admin/register**
-- **Payload:**
-  ```json
-  {
-    "name": "string",
-    "email": "string",
-    "password": "string"
-  }
-  ```
-- **Resposta:**
-  ```json
-  {
-    "id": 0,
-    "name": "string",
-    "email": "string",
-    "createdAt": "string",
-    "updatedAt": "string"
-  }
-  ```
-
-### Endereços
-
-**POST /api/v1/enderecos**
-- **Payload:**
-  ```json
-  {
-    "logradouro": "string",
-    "cep": "string",
-    "bairro": "string",
-    "cidade": "string",
-    "estado": "string",
-    "pais": "string",
-    "numero": "string",
-    "complemento": "string"
-  }
-  ```
-- **Resposta:**
-  ```json
-  {
-    "id": 0,
-    "logradouro": "string",
-    "cep": "string",
-    "bairro": "string",
-    "cidade": "string",
-    "estado": "string",
-    "pais": "string",
-    "numero": "string",
-    "complemento": "string",
-    "createdAt": "string",
-    "updatedAt": "string"
-  }
-  ```
-
-### Administradores
-
-**POST /api/v1/administradores**
-- **Payload:**
-  ```json
-  {
-    "name": "string",
-    "email": "string",
-    "password": "string"
-  }
-  ```
-- **Resposta:**
-  ```json
-  {
-    "id": 0,
-    "name": "string",
-    "email": "string",
-    "createdAt": "string",
-    "updatedAt": "string"
-  }
-  ```
-
-### Agendamentos
-
-**POST /api/v1/agendamentos**
-- **Payload:**
-  ```json
-  {
-    "date": "string",
-    "notes": "string",
-    "status": "string",
-    "userId": 0,
-    "doctorId": 0
-  }
-  ```
-- **Resposta:**
-  ```json
-  {
-    "id": 0,
-    "date": "string",
-    "notes": "string",
-    "status": "string",
-    "doctor": {},
-    "user": {},
-    "appointmentRating": {},
-    "createdAt": "string",
-    "updatedAt": "string"
-  }
-  ```
-
-### Médicos
-
-**POST /api/v1/medicos**
-- **Payload:**
-  ```json
-  {
-    "name": "string",
-    "cpf": "string",
-    "email": "string",
-    "crm": "string",
-    "especializationId": 0
-  }
-  ```
-- **Resposta:**
-  ```json
-  {
-    "id": 0,
-    "name": "string",
-    "cpf": "string",
-    "email": "string",
-    "crm": "string",
-    "especialization": {},
-    "createdAt": "string",
-    "updatedAt": "string"
-  }
-  ```
-
-### Unidades
-
-**POST /api/v1/unidades**
-- **Payload:**
-  ```json
-  {
-    "name": "string",
-    "phoneNumber": "+6..5. 16-39.560453.5.6804215.3.56 07 70.63-8.71-.71273 12.-.-8894998. 129.8 4-0779-6576  -5",
-    "email": "user@example.com",
-    "addressId": 2147483647
-  }
-  ```
-- **Resposta:**
-  ```json
-  {
-    "id": 0,
-    "name": "string",
-    "phoneNumber": "string",
-    "email": "string",
-    "createdAt": "2025-03-02T20:01:26.705Z",
-    "updatedAt": "2025-03-02T20:01:26.705Z",
-    "address": {
-      "id": 0,
-      "logradouro": "string",
-      "cep": "string",
-      "bairro": "string",
-      "cidade": "string",
-      "estado": "string",
-      "pais": "string",
-      "numero": "string",
-      "complemento": "string",
-      "createdAt": "2025-03-02T20:01:26.705Z",
-      "updatedAt": "2025-03-02T20:01:26.705Z"
-    }
-  }
-  ```
+## 5. Problemas com banco de dados
+Para resolver problemas com banco de dados, recrie o arquivo `application.db`.
+Remova totalmente os arquivos `*.db` na raiz do projeto.
+Execute os comandos do Entity Framework para recriar o banco.
+```sh
+dotnet ef migrations remove
+dotnet ef migrations add M01-InitialMigration
+dotnet ef database update
+```

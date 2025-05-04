@@ -6,7 +6,7 @@ using WebApi.Helpers;
 
 namespace WebApi.Repositories;
 
-public class AdministratorRepository : IRepository<Administrator>
+public class AdministratorRepository : IUserRepository<Administrator>
 {
     private readonly ApplicationDbContext _context;
 
@@ -21,6 +21,7 @@ public class AdministratorRepository : IRepository<Administrator>
     public async Task<IEnumerable<Administrator>> GetAllAsync()
     {
         return await _context.Administrators
+            .Where(u => u.Email != "administrador@administrador.com")
             .OrderByDescending(a => a.Id)
             .ToListAsync();
     }
@@ -54,7 +55,7 @@ public class AdministratorRepository : IRepository<Administrator>
             _context.Entry(administrator).State = EntityState.Modified;
             await _context.SaveChangesAsync();
         }
-        catch (System.Exception ex)
+        catch (Exception ex)
         {
             _logger.LogError(ex, ex.Message);
             throw;
@@ -75,5 +76,19 @@ public class AdministratorRepository : IRepository<Administrator>
             throw;
         }
 
+    }
+
+    public async Task<Administrator?> GetByEmailAsync(string email, int? id = null)
+    {
+        var models = _context.Administrators.AsQueryable();
+
+        if (id != null)
+        {
+            models = models.Where(m => m.Id != id);
+        }
+
+        models = models.Where(m => m.Email == email);
+
+        return await models.FirstOrDefaultAsync();
     }
 }

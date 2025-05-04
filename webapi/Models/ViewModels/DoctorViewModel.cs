@@ -12,7 +12,9 @@ public class DoctorViewModel
 
     public string CRM { get; set; } = "";
 
-    public EspecializationViewModel? Especialization { get; set; } = null!;
+    public SpecializationViewModel? Specialization { get; set; } = null!;
+
+    public List<MedicalCenterViewModel>? MedicalCenters { get; set; } = null!;
 
     public DateTime? CreatedAt { get; set; }
 

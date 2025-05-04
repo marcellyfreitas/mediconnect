@@ -106,7 +106,14 @@ namespace webapi.Migrations
                     b.Property<int>("DoctorId")
                         .HasColumnType("INTEGER");
 
+                    b.Property<int>("MedicalCenterId")
+                        .HasColumnType("INTEGER");
+
                     b.Property<string>("Notes")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Protocol")
+                        .IsRequired()
                         .HasColumnType("TEXT");
 
                     b.Property<string>("Status")
@@ -122,6 +129,11 @@ namespace webapi.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("DoctorId");
+
+                    b.HasIndex("MedicalCenterId");
+
+                    b.HasIndex("Protocol")
+                        .IsUnique();
 
                     b.HasIndex("UserId");
 
@@ -183,12 +195,12 @@ namespace webapi.Migrations
                         .IsRequired()
                         .HasColumnType("TEXT");
 
-                    b.Property<int>("EspecializationId")
-                        .HasColumnType("INTEGER");
-
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasColumnType("TEXT");
+
+                    b.Property<int>("SpecializationId")
+                        .HasColumnType("INTEGER");
 
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("TEXT");
@@ -198,33 +210,33 @@ namespace webapi.Migrations
                     b.HasIndex("Email")
                         .IsUnique();
 
-                    b.HasIndex("EspecializationId");
+                    b.HasIndex("SpecializationId");
 
                     b.ToTable("medicos");
                 });
 
-            modelBuilder.Entity("WebApi.Models.Especialization", b =>
+            modelBuilder.Entity("WebApi.Models.DoctorMedicalCenter", b =>
                 {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
+                    b.Property<int>("DoctorId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("MedicalCenterId")
                         .HasColumnType("INTEGER");
 
                     b.Property<DateTime?>("CreatedAt")
                         .HasColumnType("TEXT");
 
-                    b.Property<string>("Description")
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasColumnType("TEXT");
+                    b.Property<int>("Id")
+                        .HasColumnType("INTEGER");
 
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("TEXT");
 
-                    b.HasKey("Id");
+                    b.HasKey("DoctorId", "MedicalCenterId");
 
-                    b.ToTable("especializacoes");
+                    b.HasIndex("MedicalCenterId");
+
+                    b.ToTable("medico_centro_medico", (string)null);
                 });
 
             modelBuilder.Entity("WebApi.Models.HealthPlan", b =>
@@ -349,6 +361,30 @@ namespace webapi.Migrations
                     b.ToTable("exames");
                 });
 
+            modelBuilder.Entity("WebApi.Models.Specialization", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<DateTime?>("CreatedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Description")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("especializacoes");
+                });
+
             modelBuilder.Entity("WebApi.Models.User", b =>
                 {
                     b.Property<int>("Id")
@@ -398,6 +434,12 @@ namespace webapi.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.HasOne("WebApi.Models.MedicalCenter", "MedicalCenter")
+                        .WithMany()
+                        .HasForeignKey("MedicalCenterId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
                     b.HasOne("WebApi.Models.User", "User")
                         .WithMany()
                         .HasForeignKey("UserId")
@@ -405,6 +447,8 @@ namespace webapi.Migrations
                         .IsRequired();
 
                     b.Navigation("Doctor");
+
+                    b.Navigation("MedicalCenter");
 
                     b.Navigation("User");
                 });
@@ -430,13 +474,32 @@ namespace webapi.Migrations
 
             modelBuilder.Entity("WebApi.Models.Doctor", b =>
                 {
-                    b.HasOne("WebApi.Models.Especialization", "Especialization")
+                    b.HasOne("WebApi.Models.Specialization", "Specialization")
                         .WithMany()
-                        .HasForeignKey("EspecializationId")
+                        .HasForeignKey("SpecializationId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.Navigation("Especialization");
+                    b.Navigation("Specialization");
+                });
+
+            modelBuilder.Entity("WebApi.Models.DoctorMedicalCenter", b =>
+                {
+                    b.HasOne("WebApi.Models.Doctor", "Doctor")
+                        .WithMany("DoctorMedicalCenters")
+                        .HasForeignKey("DoctorId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("WebApi.Models.MedicalCenter", "MedicalCenter")
+                        .WithMany("DoctorMedicalCenters")
+                        .HasForeignKey("MedicalCenterId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Doctor");
+
+                    b.Navigation("MedicalCenter");
                 });
 
             modelBuilder.Entity("WebApi.Models.MedicalAgreement", b =>
@@ -473,9 +536,19 @@ namespace webapi.Migrations
                     b.Navigation("AppointmentRating");
                 });
 
+            modelBuilder.Entity("WebApi.Models.Doctor", b =>
+                {
+                    b.Navigation("DoctorMedicalCenters");
+                });
+
             modelBuilder.Entity("WebApi.Models.HealthPlan", b =>
                 {
                     b.Navigation("MedicalAgreements");
+                });
+
+            modelBuilder.Entity("WebApi.Models.MedicalCenter", b =>
+                {
+                    b.Navigation("DoctorMedicalCenters");
                 });
 #pragma warning restore 612, 618
         }

@@ -28,6 +28,7 @@ public class UserAuthController : ControllerBase
             Id = user.Id,
             Name = user.Name,
             Email = user.Email,
+            Cpf = user.Cpf,
             CreatedAt = user.CreatedAt,
             UpdatedAt = user.UpdatedAt,
         };
@@ -40,9 +41,11 @@ public class UserAuthController : ControllerBase
     {
         try
         {
-            if (!ModelState.IsValid)
+            ModelState.ClearValidationState(nameof(dto));
+
+            if (!TryValidateModel(dto))
             {
-                return StatusCode(422, ApiHelper.UnprocessableEntity(ModelState));
+                return StatusCode(422, ApiHelper.UnprocessableEntity(ApiHelper.GetErrorMessages(ModelState)));
             }
 
             var model = await _repository.ValidateUserAsync(dto.Email, dto.Password);
@@ -70,9 +73,11 @@ public class UserAuthController : ControllerBase
     {
         try
         {
-            if (!ModelState.IsValid)
+            ModelState.ClearValidationState(nameof(dto));
+
+            if (!TryValidateModel(dto))
             {
-                return StatusCode(422, ApiHelper.UnprocessableEntity(ModelState));
+                return StatusCode(422, ApiHelper.UnprocessableEntity(ApiHelper.GetErrorMessages(ModelState)));
             }
 
             var principal = _repository.ValidateRefreshToken(dto.RefreshToken);
@@ -153,9 +158,11 @@ public class UserAuthController : ControllerBase
     {
         try
         {
-            if (!ModelState.IsValid)
+            ModelState.ClearValidationState(nameof(dto));
+
+            if (!TryValidateModel(dto))
             {
-                return StatusCode(422, ApiHelper.UnprocessableEntity(ModelState));
+                return StatusCode(422, ApiHelper.UnprocessableEntity(ApiHelper.GetErrorMessages(ModelState)));
             }
 
             var existingUser = await _repository.FindUserByEmailAsync(dto.Email);
@@ -170,19 +177,14 @@ public class UserAuthController : ControllerBase
                 Name = dto.Name,
                 Email = dto.Email,
                 Cpf = dto.Cpf,
-                Password = PasswordHelper.HashPassword(dto.Password),
+                Password = dto.Password,
             };
 
             await _repository.CreateUserAsync(user);
 
-            var result = await GetUserData();
+            var viewModel = GetViewModel(user);
 
-            if (result is ObjectResult objectResult)
-            {
-                objectResult.StatusCode = 201;
-            }
-
-            return result;
+            return StatusCode(201, ApiHelper.Created(viewModel));
         }
         catch (Exception ex)
         {

@@ -5,6 +5,7 @@ using WebApi.Repositories;
 using WebApi.Models;
 using WebApi.Models.Dto;
 using WebApi.Models.ViewModels;
+using WebApi.Extensions.ModelExtensions;
 
 namespace WebApi.Controllers;
 
@@ -13,34 +14,20 @@ namespace WebApi.Controllers;
 [Route("api/v1/administradores")]
 public class AdministratorController : Controller
 {
-    private readonly IRepository<Administrator> _repository;
+    private readonly IUserRepository<Administrator> _repository;
     private readonly ILogger<AdministratorController> _logger;
 
-    public AdministratorController(IRepository<Administrator> AdministratorRepository, ILogger<AdministratorController> logger)
+    public AdministratorController(IUserRepository<Administrator> AdministratorRepository, ILogger<AdministratorController> logger)
     {
         _repository = AdministratorRepository;
         _logger = logger;
-    }
-
-    protected AdministratorViewModel GetViewModel(Administrator administrator)
-    {
-        var viewModel = new AdministratorViewModel
-        {
-            Id = administrator.Id,
-            Name = administrator.Name,
-            Email = administrator.Email,
-            CreatedAt = administrator.CreatedAt,
-            UpdatedAt = administrator.UpdatedAt,
-        };
-
-        return viewModel;
     }
 
     [HttpGet]
     public async Task<ActionResult<IEnumerable<AdministratorViewModel>>> GetAllAsync()
     {
         var list = await _repository.GetAllAsync();
-        var viewModels = list.Select(u => GetViewModel(u));
+        var viewModels = list.Select(u => u.ToViewModel());
 
         return StatusCode(200, ApiHelper.Ok(viewModels));
     }
@@ -55,9 +42,7 @@ public class AdministratorController : Controller
             return StatusCode(404, ApiHelper.NotFound());
         }
 
-        var viewModel = GetViewModel(model);
-
-        return StatusCode(200, ApiHelper.Ok(viewModel));
+        return StatusCode(200, ApiHelper.Ok(model.ToViewModel()));
     }
 
     [HttpPost]
@@ -65,16 +50,25 @@ public class AdministratorController : Controller
     {
         try
         {
-            if (!ModelState.IsValid)
+            ModelState.ClearValidationState(nameof(dto));
+
+            if (!TryValidateModel(dto))
             {
-                return StatusCode(422, ApiHelper.UnprocessableEntity(ModelState));
+                return StatusCode(422, ApiHelper.UnprocessableEntity(ApiHelper.GetErrorMessages(ModelState)));
+            }
+
+            var existingEmail = _repository.GetByEmailAsync(dto.Email);
+
+            if (existingEmail != null)
+            {
+                return StatusCode(422, ApiHelper.UnprocessableEntity(Array.Empty<int>(), "Email está em uso"));
             }
 
             var model = new Administrator
             {
                 Name = dto.Name,
                 Email = dto.Email,
-                Password = PasswordHelper.HashPassword(dto.Password),
+                Password = dto.Password,
             };
 
             await _repository.AddAsync(model);
@@ -101,9 +95,11 @@ public class AdministratorController : Controller
     {
         try
         {
-            if (!ModelState.IsValid)
+            ModelState.ClearValidationState(nameof(dto));
+
+            if (!TryValidateModel(dto))
             {
-                return StatusCode(422, ApiHelper.UnprocessableEntity(ModelState));
+                return StatusCode(422, ApiHelper.UnprocessableEntity(ApiHelper.GetErrorMessages(ModelState)));
             }
 
             var model = await _repository.GetByIdAsync(Id);
@@ -113,9 +109,15 @@ public class AdministratorController : Controller
                 return StatusCode(404, ApiHelper.NotFound());
             }
 
+            var existingEmail = await _repository.GetByEmailAsync(dto.Email, model.Id);
+
+            if (existingEmail != null)
+            {
+                return StatusCode(422, ApiHelper.UnprocessableEntity(Array.Empty<int>(), "Email está em uso"));
+            }
+
             model.Name = dto.Name ?? model.Name;
             model.Email = dto.Email ?? model.Email;
-            model.UpdatedAt = DateTime.Now;
 
             await _repository.UpdateAsync(model);
 

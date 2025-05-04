@@ -8,7 +8,7 @@ module.exports = {
 	},
 	rules: {
 		'quotes': ['error', 'single'],
-		indent: ['error', 'tab'],
+		indent: ['error', 'tab', { SwitchCase: 1 }],
 		'no-mixed-spaces-and-tabs': ['error', 'smart-tabs'],
 		semi: ['error', 'always'],
 		'jsx-quotes': ['error', 'prefer-double'],

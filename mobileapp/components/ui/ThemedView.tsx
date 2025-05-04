@@ -9,7 +9,7 @@ export const ThemedView = ({ children, className, ...rest }: Props) => {
 	return (
 		<View
 			{...rest}
-			className={clsx('bg-white dark:bg-gray-900', className)}
+			className={clsx('bg-secondary-500', className)}
 		>
 			{children}
 		</View>

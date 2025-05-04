@@ -10,9 +10,12 @@ public class MedicalCenterViewModel
 
     public string? Email { get; set; }
 
-    public DateTime CreatedAt { get; set; }
+    public AddressViewModel? Address { get; set; }
 
-    public DateTime UpdatedAt { get; set; }
+    public List<DoctorViewModel>? Doctors { get; set; }
 
-    public AddressViewModel? address { get; set; }
+    public DateTime? CreatedAt { get; set; }
+
+    public DateTime? UpdatedAt { get; set; }
+
 }

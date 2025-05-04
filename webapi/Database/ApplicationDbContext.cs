@@ -21,7 +21,7 @@ public class ApplicationDbContext : DbContext
 
     public DbSet<Doctor> Doctors { get; set; }
 
-    public DbSet<Especialization> Especializations { get; set; }
+    public DbSet<Specialization> Specializations { get; set; }
 
     public DbSet<Appointment> Appointments { get; set; }
 
@@ -34,6 +34,8 @@ public class ApplicationDbContext : DbContext
     public DbSet<MedicalAgreement> MedicalAgreements { get; set; }
 
     public DbSet<MedicalExam> MedicalExams { get; set; }
+
+    public DbSet<DoctorMedicalCenter> DoctorMedicalCenters { get; set; }
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
     {
@@ -57,5 +59,20 @@ public class ApplicationDbContext : DbContext
         modelBuilder.Entity<User>().HasIndex(u => u.Email).IsUnique();
         modelBuilder.Entity<Administrator>().HasIndex(u => u.Email).IsUnique();
         modelBuilder.Entity<Doctor>().HasIndex(u => u.Email).IsUnique();
+        modelBuilder.Entity<Appointment>().HasIndex(u => u.Protocol).IsUnique();
+
+        modelBuilder.Entity<DoctorMedicalCenter>()
+        .ToTable("medico_centro_medico") // Nome correto da tabela de junção
+        .HasKey(dmc => new { dmc.DoctorId, dmc.MedicalCenterId }); // Define chave composta
+
+        modelBuilder.Entity<DoctorMedicalCenter>()
+            .HasOne(dmc => dmc.Doctor)
+            .WithMany(d => d.DoctorMedicalCenters)
+            .HasForeignKey(dmc => dmc.DoctorId);
+
+        modelBuilder.Entity<DoctorMedicalCenter>()
+            .HasOne(dmc => dmc.MedicalCenter)
+            .WithMany(mc => mc.DoctorMedicalCenters)
+            .HasForeignKey(dmc => dmc.MedicalCenterId);
     }
 }

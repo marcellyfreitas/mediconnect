@@ -5,6 +5,10 @@ using WebApi.Models.Dto;
 using WebApi.Models.ViewModels;
 using Microsoft.AspNetCore.Authorization;
 using WebApi.Helpers;
+using WebApi.Extensions.ModelExtensions;
+using WebApi.Database;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
 
 namespace WebApi.Controllers;
 
@@ -14,76 +18,182 @@ namespace WebApi.Controllers;
 public class AppointmentController : ControllerBase
 {
     private readonly IRepository<Appointment> _repository;
-
     private readonly ILogger<AppointmentController> _logger;
+    private readonly ApplicationDbContext _context;
 
-    public AppointmentController(IRepository<Appointment> repository, ILogger<AppointmentController> logger)
+    public AppointmentController(IRepository<Appointment> repository, ILogger<AppointmentController> logger, ApplicationDbContext context)
     {
         _repository = repository;
         _logger = logger;
+        _context = context;
     }
 
-    protected AppointmentViewModel? GetViewModel(Appointment? appointment)
+    protected object GetAppintmentViewModel(Appointment model)
     {
-        if (appointment != null)
+        var viewmodel = new
         {
-            UserViewModel? user = null;
-            DoctorViewModel? doctor = null;
-            AppointmentRatingViewModel? appointmentRating = null;
+            model.Id,
+            model.Date,
+            model.Status,
+            model.Protocol,
+            model.Notes,
+            model.CreatedAt,
 
-            if (appointment?.User != null)
+            Doctor = model.Doctor != null ? new
             {
-                user = new UserViewModel
+                model.Doctor.Id,
+                model.Doctor.Name,
+                model.Doctor.CRM,
+                Specialization = model.Doctor.Specialization != null ? new
                 {
-                    Id = appointment.User.Id,
-                    Name = appointment.User.Name,
-                    Email = appointment.User.Email,
-                };
+                    model.Doctor.Specialization.Id,
+                    model.Doctor.Specialization.Name
+                } : null
+            } : null,
+
+            MedicalCenter = model.MedicalCenter != null ? new
+            {
+                model.MedicalCenter.Id,
+                model.MedicalCenter.Name,
+                Address = model.MedicalCenter.Address != null ? new
+                {
+                    model.MedicalCenter.Address.Id,
+                    model.MedicalCenter.Address.Logradouro,
+                    model.MedicalCenter.Address.Bairro,
+                    model.MedicalCenter.Address.Numero,
+                    model.MedicalCenter.Address.Cep,
+                } : null
+            } : null,
+
+            User = model.User != null ? new
+            {
+                model.User.Name,
+                model.User.Email,
+            } : null,
+
+            Rating = model.AppointmentRating != null ? new
+            {
+                model.AppointmentRating.Id,
+                model.AppointmentRating.Rating,
+                model.AppointmentRating.Comment
+            } : null
+        };
+
+        return viewmodel;
+    }
+
+    [HttpGet("medicos")]
+    public async Task<IActionResult> GetMedicalOrSpecialization([FromQuery] string? search, int? especialidade = null)
+    {
+        try
+        {
+            var query = _context.Doctors
+                .Include(d => d.DoctorMedicalCenters!)
+                    .ThenInclude(dmc => dmc.MedicalCenter)
+                        .ThenInclude(mc => mc.Address)
+                .Include(d => d.Specialization)
+                .AsQueryable();
+
+            if (!string.IsNullOrEmpty(search))
+            {
+                query = query.Where(d => EF.Functions.Like(d.Name.ToLower(), $"%{search.ToLower()}%"));
             }
 
-            if (appointment?.Doctor != null)
+            if (especialidade != null)
             {
-                doctor = new DoctorViewModel
-                {
-                    Id = appointment.Doctor.Id,
-                    Name = appointment.Doctor.Name,
-                    Email = appointment.Doctor.Email,
-                };
+                query = query.Where(d => d.Specialization != null && d.SpecializationId == especialidade);
             }
 
-            if (appointment!.AppointmentRating != null)
-            {
-                appointmentRating = new AppointmentRatingViewModel
+            var result = await query
+                .OrderByDescending(d => d.Id)
+                .SelectMany(d => d.DoctorMedicalCenters!, (doctor, dmc) => new
                 {
-                    Id = appointment.AppointmentRating.Id,
-                    Rating = appointment.AppointmentRating.Rating,
-                    Comment = appointment.AppointmentRating.Comment,
-                };
-            }
+                    // Dados do médico
+                    DoctorId = doctor.Id,
+                    doctor.Name,
+                    doctor.Email,
+                    doctor.CPF,
+                    doctor.CRM,
+                    doctor.SpecializationId,
+                    Specialization = doctor.Specialization != null ? new
+                    {
+                        doctor.Specialization.Id,
+                        doctor.Specialization.Name,
+                        doctor.Specialization.Description
+                    } : null,
 
-            var viewModel = new AppointmentViewModel
-            {
-                Id = appointment!.Id,
-                Date = appointment.Date,
-                Notes = appointment.Notes,
-                Status = appointment.Status,
-                User = user,
-                Doctor = doctor,
-                AppointmentRating = appointmentRating,
-                CreatedAt = appointment.CreatedAt ?? DateTime.Now,
-                UpdatedAt = appointment.UpdatedAt ?? DateTime.Now,
-            };
+                    MedicalCenter = new
+                    {
+                        dmc.MedicalCenter.Id,
+                        dmc.MedicalCenter.Name,
+                        dmc.MedicalCenter.Email,
+                        dmc.MedicalCenter.PhoneNumber,
+                        Address = new
+                        {
+                            dmc.MedicalCenter.Address!.Id,
+                            dmc.MedicalCenter.Address!.Logradouro,
+                            dmc.MedicalCenter.Address.Cep,
+                            dmc.MedicalCenter.Address.Bairro,
+                            dmc.MedicalCenter.Address.Cidade,
+                            dmc.MedicalCenter.Address.Estado,
+                            dmc.MedicalCenter.Address.Pais,
+                            dmc.MedicalCenter.Address.Numero,
+                            dmc.MedicalCenter.Address.Complemento,
+                        }
+                    }
+                })
+                .ToListAsync();
 
-            return viewModel;
+            return StatusCode(200, ApiHelper.Ok(result));
         }
-        return null;
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, ex.Message);
+            return StatusCode(500, ApiHelper.InternalServerError());
+        }
+    }
+
+    [HttpGet("horarios")]
+    public async Task<IActionResult> GetAllAppointmentHoursAsync([FromQuery] DateTime date, int doctorId, int medicalCenterId)
+    {
+        try
+        {
+            var hours = await _context.Appointments
+                .OrderByDescending(a => a.Id)
+                .Where(a => a.Date.Date == date.Date)
+                .Where(a => a.DoctorId == doctorId)
+                .Where(a => a.MedicalCenterId == medicalCenterId)
+                .Select(a => a.Date)
+                .ToListAsync();
+
+            return StatusCode(200, ApiHelper.Ok(hours));
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, ex.Message);
+            return StatusCode(500, ApiHelper.InternalServerError());
+        }
     }
 
     [HttpGet]
-    public async Task<ActionResult<IEnumerable<AppointmentViewModel>>> GetAllAsync()
+    public async Task<ActionResult<IEnumerable<AppointmentViewModel>>> GetAllAsync(string search)
     {
+        if (string.IsNullOrWhiteSpace(search))
+        {
+            return StatusCode(200, ApiHelper.Ok());
+        }
+
         var list = await _repository.GetAllAsync();
-        var viewModels = list.Select(u => GetViewModel(u)).ToList();
+
+        var viewModels = list
+            .Where(m =>
+                (m.Protocol != null && m.Protocol.ToUpper().Contains(search.ToUpper())) ||
+                (m.User != null && m.User.Name != null && m.User.Name.ToUpper().Contains(search.ToUpper())) ||
+                (m.User != null && m.User.Cpf != null &&
+                m.User.Cpf.Replace(".", "").Replace("-", "").ToUpper().Contains(search.ToUpper()))
+            )
+            .Select(u => GetAppintmentViewModel(u))
+            .ToList();
 
         return StatusCode(200, ApiHelper.Ok(viewModels));
     }
@@ -98,9 +208,7 @@ public class AppointmentController : ControllerBase
             return StatusCode(404, ApiHelper.NotFound());
         }
 
-        var viewModel = GetViewModel(model);
-
-        return StatusCode(200, ApiHelper.Ok(viewModel!));
+        return StatusCode(200, ApiHelper.Ok(model));
     }
 
     [HttpPost]
@@ -108,9 +216,11 @@ public class AppointmentController : ControllerBase
     {
         try
         {
-            if (!ModelState.IsValid)
+            ModelState.ClearValidationState(nameof(dto));
+
+            if (!TryValidateModel(dto))
             {
-                return StatusCode(422, ApiHelper.UnprocessableEntity(ModelState));
+                return StatusCode(422, ApiHelper.UnprocessableEntity(ApiHelper.GetErrorMessages(ModelState)));
             }
 
             var model = new Appointment
@@ -120,6 +230,7 @@ public class AppointmentController : ControllerBase
                 Status = dto.Status,
                 UserId = dto.UserId,
                 DoctorId = dto.DoctorId,
+                MedicalCenterId = dto.MedicalCenterId,
             };
 
             await _repository.AddAsync(model);
@@ -146,9 +257,11 @@ public class AppointmentController : ControllerBase
     {
         try
         {
-            if (!ModelState.IsValid)
+            ModelState.ClearValidationState(nameof(dto));
+
+            if (!TryValidateModel(dto))
             {
-                return StatusCode(422, ApiHelper.UnprocessableEntity(ModelState));
+                return StatusCode(422, ApiHelper.UnprocessableEntity(ApiHelper.GetErrorMessages(ModelState)));
             }
 
             var model = await _repository.GetByIdAsync(Id);
@@ -161,7 +274,6 @@ public class AppointmentController : ControllerBase
             model.Date = dto.Date ?? model.Date;
             model.Notes = dto.Notes ?? model.Notes;
             model.Status = dto.Status ?? model.Status;
-            model.UpdatedAt = DateTime.Now;
 
             await _repository.UpdateAsync(model);
 
@@ -197,4 +309,33 @@ public class AppointmentController : ControllerBase
             return StatusCode(500, ApiHelper.InternalServerError());
         }
     }
+
+    [HttpPut("{id}/cancelar")]
+    public async Task<IActionResult> CancelAppointmentAsync(int id)
+    {
+        try
+        {
+            var model = await _context.Appointments.FirstOrDefaultAsync(m => m.Id == id);
+
+            if (model == null)
+            {
+                return StatusCode(404, ApiHelper.NotFound());
+            }
+
+            model.Notes = "Agendamento cancelado pelo usuário";
+            model.Status = "Cancelada";
+
+            model.UpdatedAt = DateTime.UtcNow;
+            _context.Entry(model).State = EntityState.Modified;
+            await _context.SaveChangesAsync();
+
+            return StatusCode(200, ApiHelper.Ok());
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, ex.Message);
+            return StatusCode(500, ApiHelper.InternalServerError("erro"));
+        }
+    }
+
 }

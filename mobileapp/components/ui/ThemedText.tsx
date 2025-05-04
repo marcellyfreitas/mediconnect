@@ -9,7 +9,7 @@ export const ThemedText = ({ children, className, ...rest }: Props) => {
 	return (
 		<Text
 			{...rest}
-			className={clsx('text-slate-700 dark:text-slate-200', className)}
+			className={clsx('text-white', className)}
 		>
 			{children}
 		</Text>

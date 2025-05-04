@@ -5,6 +5,7 @@ using WebApi.Models.Dto;
 using WebApi.Models.ViewModels;
 using Microsoft.AspNetCore.Authorization;
 using WebApi.Helpers;
+using WebApi.Extensions.ModelExtensions;
 
 namespace WebApi.Controllers;
 
@@ -22,36 +23,11 @@ public class AppointmentRatingController : ControllerBase
         _logger = logger;
     }
 
-    protected AppointmentRatingViewModel GetViewModel(AppointmentRating appointmentRating)
-    {
-        UserViewModel? user = null;
-
-        if (appointmentRating.User != null)
-        {
-            user = new UserViewModel
-            {
-                Id = appointmentRating.User.Id,
-                Name = appointmentRating.User.Name,
-                Email = appointmentRating.User.Email,
-            };
-        }
-
-        return new AppointmentRatingViewModel
-        {
-            Id = appointmentRating.Id,
-            Rating = appointmentRating.Rating,
-            Comment = appointmentRating.Comment,
-            User = user,
-            CreatedAt = appointmentRating.CreatedAt ?? DateTime.Now,
-            UpdatedAt = appointmentRating.UpdatedAt ?? DateTime.Now,
-        };
-    }
-
     [HttpGet]
     public async Task<ActionResult<IEnumerable<AppointmentRatingViewModel>>> GetAllAsync()
     {
         var list = await _repository.GetAllAsync();
-        var viewModels = list.Select(u => GetViewModel(u)).ToList();
+        var viewModels = list.Select(u => u.ToViewModel()).ToList();
 
         return StatusCode(200, ApiHelper.Ok(viewModels));
     }
@@ -66,9 +42,7 @@ public class AppointmentRatingController : ControllerBase
             return StatusCode(404, ApiHelper.NotFound());
         }
 
-        var viewModel = GetViewModel(model);
-
-        return StatusCode(200, ApiHelper.Ok(viewModel));
+        return StatusCode(200, ApiHelper.Ok(model.ToViewModel()));
     }
 
     [HttpPost]
@@ -76,9 +50,11 @@ public class AppointmentRatingController : ControllerBase
     {
         try
         {
-            if (!ModelState.IsValid)
+            ModelState.ClearValidationState(nameof(dto));
+
+            if (!TryValidateModel(dto))
             {
-                return StatusCode(422, ApiHelper.UnprocessableEntity(ModelState));
+                return StatusCode(422, ApiHelper.UnprocessableEntity(ApiHelper.GetErrorMessages(ModelState)));
             }
 
             var model = new AppointmentRating
@@ -113,9 +89,11 @@ public class AppointmentRatingController : ControllerBase
     {
         try
         {
-            if (!ModelState.IsValid)
+            ModelState.ClearValidationState(nameof(dto));
+
+            if (!TryValidateModel(dto))
             {
-                return StatusCode(422, ApiHelper.UnprocessableEntity(ModelState));
+                return StatusCode(422, ApiHelper.UnprocessableEntity(ApiHelper.GetErrorMessages(ModelState)));
             }
 
             var model = await _repository.GetByIdAsync(Id);
@@ -127,7 +105,6 @@ public class AppointmentRatingController : ControllerBase
 
             model.Rating = dto.Rating ?? model.Rating;
             model.Comment = dto.Comment ?? model.Comment;
-            model.UpdatedAt = DateTime.Now;
 
             await _repository.UpdateAsync(model);
 

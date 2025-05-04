@@ -36,7 +36,7 @@ const PasswordInput = ({
 		<View className="w-full">
 			<View
 				className={clsx(
-					'w-full flex-row items-center h-[40px] bg-white border border-gray-300 rounded focus:border-blue-500 dark:bg-gray-800 dark:border-gray-600',
+					'w-full flex-row items-center h-[40px] bg-white border border-gray-300 rounded focus:border-blue-500',
 					error && 'border-red-500 dark:border-red-500',
 					disabled && 'opacity-50',
 					className,
@@ -50,7 +50,7 @@ const PasswordInput = ({
 					onChangeText={disabled ? undefined : onChangeText}
 					secureTextEntry={showPassword}
 					className={clsx(
-						'flex-1 h-full px-4 text-black dark:text-white placeholder-gray-400 dark:placeholder-gray-500',
+						'flex-1 h-full px-4 text-black placeholder-gray-400',
 					)}
 					style={style}
 					editable={!disabled}

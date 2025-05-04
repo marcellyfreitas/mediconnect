@@ -5,6 +5,7 @@ using WebApi.Models.Dto;
 using WebApi.Models.ViewModels;
 using Microsoft.AspNetCore.Authorization;
 using WebApi.Helpers;
+using WebApi.Extensions.ModelExtensions;
 
 namespace WebApi.Controllers;
 
@@ -22,32 +23,12 @@ public class AddressesController : ControllerBase
         _logger = logger;
     }
 
-    protected AddressViewModel GetViewModel(Address model)
-    {
-        var viewModel = new AddressViewModel
-        {
-            Id = model.Id,
-            Logradouro = model.Logradouro,
-            Cep = model.Cep,
-            Bairro = model.Bairro,
-            Cidade = model.Cidade,
-            Estado = model.Estado,
-            Pais = model.Pais,
-            Numero = model.Numero,
-            Complemento = model.Complemento,
-            CreatedAt = model.CreatedAt,
-            UpdatedAt = model.UpdatedAt,
-        };
-
-        return viewModel;
-    }
-
     [HttpGet]
     public async Task<ActionResult<IEnumerable<AddressViewModel>>> GetAllAsync()
     {
         var list = await _repository.GetAllAsync();
 
-        var viewModels = list.Select(a => GetViewModel(a)).ToList();
+        var viewModels = list.Select(a => a.ToViewModel()).ToList();
 
         return StatusCode(200, ApiHelper.Ok(viewModels));
     }
@@ -62,9 +43,7 @@ public class AddressesController : ControllerBase
             return StatusCode(404, ApiHelper.NotFound());
         }
 
-        var viewModel = GetViewModel(model);
-
-        return StatusCode(200, ApiHelper.Ok(viewModel));
+        return StatusCode(200, ApiHelper.Ok(model.ToViewModel()));
     }
 
     [HttpPost]
@@ -72,9 +51,11 @@ public class AddressesController : ControllerBase
     {
         try
         {
-            if (!ModelState.IsValid)
+            ModelState.ClearValidationState(nameof(dto));
+
+            if (!TryValidateModel(dto))
             {
-                return StatusCode(422, ApiHelper.UnprocessableEntity(ModelState));
+                return StatusCode(422, ApiHelper.UnprocessableEntity(ApiHelper.GetErrorMessages(ModelState)));
             }
 
             var model = new Address
@@ -113,9 +94,11 @@ public class AddressesController : ControllerBase
     {
         try
         {
-            if (!ModelState.IsValid)
+            ModelState.ClearValidationState(nameof(dto));
+
+            if (!TryValidateModel(dto))
             {
-                return StatusCode(422, ApiHelper.UnprocessableEntity(ModelState));
+                return StatusCode(422, ApiHelper.UnprocessableEntity(ApiHelper.GetErrorMessages(ModelState)));
             }
 
             var model = await _repository.GetByIdAsync(id);
@@ -133,7 +116,6 @@ public class AddressesController : ControllerBase
             model.Pais = dto.Pais ?? model.Pais;
             model.Numero = dto.Numero ?? model.Numero;
             model.Complemento = dto.Complemento ?? model.Complemento;
-            model.UpdatedAt = DateTime.Now;
 
             await _repository.UpdateAsync(model);
 

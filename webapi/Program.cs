@@ -4,7 +4,7 @@ using WebApi.Extensions;
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddCustomAuthentication(builder.Configuration);
-builder.Services.AddControllers();
+builder.Services.AddCustomControllers();
 builder.Services.AddRazorPages();
 builder.Services.AddMvc();
 builder.Services.AddDbContext<ApplicationDbContext>();
@@ -26,6 +26,8 @@ app.MapCustomControllerRoutes();
 app.UseHttpsRedirection();
 app.MapControllers();
 app.MapRazorPages();
-app.SeedDatabase();
+
+await app.SeedDatabase();
+
 
 app.Run();

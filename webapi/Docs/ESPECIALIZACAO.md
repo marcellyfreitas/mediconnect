@@ -109,4 +109,4 @@ Remove uma especialização do sistema.
 
 ---
 
-Este módulo segue a mesma estrutura do módulo de médicos, mas é adaptado para gerenciar a entidade `especialization`. As operações básicas de CRUD (Create, Read, Update, Delete) estão disponíveis, permitindo o gerenciamento completo das especializações na aplicação.
+Este módulo segue a mesma estrutura do módulo de médicos, mas é adaptado para gerenciar a entidade `Specialization`. As operações básicas de CRUD (Create, Read, Update, Delete) estão disponíveis, permitindo o gerenciamento completo das especializações na aplicação.

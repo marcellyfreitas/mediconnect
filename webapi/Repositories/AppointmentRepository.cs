@@ -4,6 +4,7 @@ using WebApi.Models;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using WebApi.Models.ViewModels;
+using WebApi.Helpers;
 
 namespace WebApi.Repositories;
 
@@ -24,6 +25,7 @@ public class AppointmentRepository : IRepository<Appointment>
         return await _context.Appointments
             .OrderByDescending(a => a.Id)
             .Include(r => r.Doctor)
+            .Include(r => r.MedicalCenter).ThenInclude(m => m!.Address)
             .Include(r => r.User)
             .Include(r => r.AppointmentRating)
             .ToListAsync();
@@ -32,7 +34,8 @@ public class AppointmentRepository : IRepository<Appointment>
     public async Task<Appointment?> GetByIdAsync(int id)
     {
         return await _context.Appointments
-            .Include(r => r.Doctor)
+            .Include(r => r.Doctor).ThenInclude(d => d!.Specialization)
+            .Include(r => r.MedicalCenter).ThenInclude(m => m!.Address)
             .Include(r => r.User)
             .Include(r => r.AppointmentRating)
             .FirstOrDefaultAsync(x => x.Id == id);
@@ -42,6 +45,7 @@ public class AppointmentRepository : IRepository<Appointment>
     {
         try
         {
+            appointment.Protocol = ProtocolHelper.GenerateProtocol();
             _context.Appointments.Add(appointment);
             await _context.SaveChangesAsync();
 
