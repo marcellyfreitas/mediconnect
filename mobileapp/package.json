@@ -2,6 +2,15 @@
   "name": "mobileapp",
   "main": "expo-router/entry",
   "version": "1.0.0",
+  "author": {
+    "name": "Marcelly Freitas",
+    "email": "marcellymoraes2014@gmail.com",
+    "url": "https://github.com/marcellyfreitas"
+  },
+  "repository": {
+    "type": "github",
+    "url": "https://github.com/marcellyfreitas/mediconnect"
+  },
   "scripts": {
     "start": "expo start",
     "reset-project": "node ./scripts/reset-project.js",
